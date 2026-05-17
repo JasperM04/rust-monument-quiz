@@ -996,9 +996,9 @@
     if (!arrowL || !arrowR) return;
 
     // left: can go back if not on first clue and that clue was already shown
-    const canLeft  = idx > 0;
-    // right: can go forward if next clue exists AND has been unlocked
-    const canRight = idx < clues.length - 1 && idx < unlocked;
+    const allUnlocked = unlocked >= clues.length - 1;
+    const canLeft  = allUnlocked && idx > 0;
+    const canRight = allUnlocked && idx < clues.length - 1;
 
     arrowL.classList.toggle('enabled', canLeft);
     arrowR.classList.toggle('enabled', canRight);
