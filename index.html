@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rust Monument Quiz</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --rust-bg:       #0d0e0c;
+      --rust-surface:  #141510;
+      --rust-card:     #1a1b16;
+      --rust-border:   #2e2e26;
+      --rust-orange:   #c85a1a;
+      --rust-orange2:  #e06820;
+      --rust-amber:    #d4891a;
+      --rust-green:    #3a7d44;
+      --rust-red:      #8b1a1a;
+      --rust-text:     #c8c4b0;
+      --rust-muted:    #6e6e5e;
+      --rust-bright:   #e8e0c8;
+    }
+
+    html, body {
+      background: var(--rust-bg);
+      color: var(--rust-text);
+      font-family: 'Barlow', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Scanline overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.08) 2px,
+        rgba(0,0,0,0.08) 4px
+      );
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    /* ─── HEADER ─── */
+    header {
+      border-bottom: 1px solid var(--rust-border);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--rust-surface);
+    }
+    .logo {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 900;
+      font-size: 1.6rem;
+      letter-spacing: 0.12em;
+      color: var(--rust-orange);
+      text-transform: uppercase;
+    }
+    .logo span { color: var(--rust-bright); }
+    .header-badge {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--rust-muted);
+      border: 1px solid var(--rust-border);
+      padding: 0.3rem 0.6rem;
+      letter-spacing: 0.1em;
+    }
+
+    /* ─── SCREENS ─── */
+    .screen { display: none; animation: fadeIn 0.3s ease; }
+    .screen.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    /* ─── START SCREEN ─── */
+    #screen-start {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 4rem 2rem;
+      text-align: center;
+    }
+    .start-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 900;
+      font-size: clamp(2.8rem, 8vw, 5rem);
+      line-height: 0.9;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--rust-bright);
+      margin-bottom: 0.4rem;
+    }
+    .start-title em {
+      display: block;
+      color: var(--rust-orange);
+      font-style: normal;
+    }
+    .start-subtitle {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--rust-muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 3rem;
+    }
+    .start-info-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--rust-border);
+      border: 1px solid var(--rust-border);
+      margin-bottom: 3rem;
+      text-align: left;
+    }
+    .start-info-cell {
+      background: var(--rust-card);
+      padding: 1.2rem 1rem;
+    }
+    .start-info-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--rust-muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+    .start-info-val {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: var(--rust-orange);
+    }
+
+    /* round count selector */
+    .round-selector {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      justify-content: center;
+      margin-bottom: 2.5rem;
+    }
+    .round-selector label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--rust-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .round-btn {
+      background: none;
+      border: 1px solid var(--rust-border);
+      color: var(--rust-muted);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 600;
+      font-size: 1rem;
+      padding: 0.4rem 1rem;
+      cursor: pointer;
+      letter-spacing: 0.1em;
+      transition: all 0.15s;
+    }
+    .round-btn.active {
+      border-color: var(--rust-orange);
+      color: var(--rust-orange);
+      background: rgba(200,90,26,0.1);
+    }
+    .round-btn:hover:not(.active) {
+      border-color: var(--rust-muted);
+      color: var(--rust-text);
+    }
+
+    /* ─── BUTTONS ─── */
+    .btn-primary {
+      display: inline-block;
+      background: var(--rust-orange);
+      color: #0d0e0c;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 900;
+      font-size: 1.1rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      border: none;
+      padding: 0.9rem 2.5rem;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    }
+    .btn-primary:hover { background: var(--rust-orange2); }
+    .btn-primary:active { transform: scale(0.97); }
+
+    .btn-secondary {
+      display: inline-block;
+      background: none;
+      color: var(--rust-text);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 600;
+      font-size: 1rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      border: 1px solid var(--rust-border);
+      padding: 0.7rem 1.8rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-secondary:hover { border-color: var(--rust-text); color: var(--rust-bright); }
+
+    /* ─── GAME SCREEN ─── */
+    #screen-game {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1.5rem 1.5rem 3rem;
+    }
+
+    /* top bar */
+    .game-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--rust-border);
+    }
+    .progress-wrap {
+      flex: 1;
+      margin-right: 2rem;
+    }
+    .progress-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--rust-muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+    .progress-bar-bg {
+      height: 3px;
+      background: var(--rust-border);
+      position: relative;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--rust-orange);
+      transition: width 0.4s ease;
+    }
+    .score-display {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--rust-muted);
+      text-align: right;
+    }
+    .score-display strong {
+      display: block;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 1.6rem;
+      color: var(--rust-amber);
+      line-height: 1;
+    }
+
+    /* timer */
+    .timer-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 1.5rem;
+    }
+    .timer-bar-bg {
+      flex: 1;
+      height: 4px;
+      background: var(--rust-border);
+    }
+    .timer-bar-fill {
+      height: 100%;
+      background: var(--rust-amber);
+      transition: width 1s linear, background 0.3s;
+    }
+    .timer-bar-fill.urgent { background: var(--rust-orange); }
+    .timer-number {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--rust-muted);
+      min-width: 2rem;
+      text-align: right;
+    }
+
+    /* image zone */
+    .image-zone {
+      position: relative;
+      background: var(--rust-card);
+      border: 1px solid var(--rust-border);
+      margin-bottom: 1.5rem;
+      min-height: 280px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .image-zone img {
+      max-width: 100%;
+      max-height: 380px;
+      object-fit: contain;
+      display: block;
+    }
+    .image-zone .no-image-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      color: var(--rust-muted);
+      padding: 3rem;
+      text-align: center;
+    }
+    .no-image-placeholder .icon-big { font-size: 3rem; line-height: 1; }
+    .no-image-placeholder .placeholder-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: var(--rust-border);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .no-image-placeholder .placeholder-hint {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--rust-border);
+      letter-spacing: 0.1em;
+    }
+    .clue-counter {
+      position: absolute;
+      top: 0.6rem;
+      right: 0.6rem;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--rust-muted);
+      background: rgba(13,14,12,0.85);
+      padding: 0.2rem 0.5rem;
+      letter-spacing: 0.1em;
+    }
+    .clue-nav {
+      position: absolute;
+      bottom: 0.6rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.4rem;
+    }
+    .clue-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--rust-border);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .clue-dot.active { background: var(--rust-orange); }
+
+    /* answer grid */
+    .answer-section-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--rust-muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.8rem;
+    }
+    .answer-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 600px) {
+      .answer-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .answer-btn {
+      background: var(--rust-card);
+      border: 1px solid var(--rust-border);
+      color: var(--rust-text);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 600;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      padding: 0.7rem 0.5rem;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+      text-transform: uppercase;
+      line-height: 1.2;
+    }
+    .answer-btn:hover:not(:disabled) {
+      border-color: var(--rust-orange);
+      color: var(--rust-orange);
+      background: rgba(200,90,26,0.08);
+    }
+    .answer-btn.correct {
+      border-color: var(--rust-green);
+      background: rgba(58,125,68,0.2);
+      color: #6fcf7c;
+    }
+    .answer-btn.wrong {
+      border-color: var(--rust-red);
+      background: rgba(139,26,26,0.2);
+      color: #cf6f6f;
+    }
+    .answer-btn:disabled { cursor: default; }
+
+    /* feedback */
+    .feedback-bar {
+      min-height: 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0 0.2rem;
+      margin-bottom: 1rem;
+    }
+    .feedback-text {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .feedback-text.correct { color: #6fcf7c; }
+    .feedback-text.wrong { color: #cf6f6f; }
+    .feedback-text.timeout { color: var(--rust-amber); }
+    .points-earned {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.9rem;
+      color: var(--rust-amber);
+    }
+
+    /* ─── RESULT SCREEN ─── */
+    #screen-result {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+      text-align: center;
+    }
+    .result-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 900;
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--rust-bright);
+      margin-bottom: 0.3rem;
+    }
+    .result-rank {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--rust-orange);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 2.5rem;
+    }
+    .result-score-big {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 900;
+      font-size: clamp(4rem, 12vw, 7rem);
+      color: var(--rust-orange);
+      line-height: 0.9;
+      margin-bottom: 0.5rem;
+    }
+    .result-score-sub {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--rust-muted);
+      letter-spacing: 0.15em;
+      margin-bottom: 3rem;
+    }
+    .result-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--rust-border);
+      border: 1px solid var(--rust-border);
+      margin-bottom: 3rem;
+      text-align: left;
+    }
+    .result-stat-cell {
+      background: var(--rust-card);
+      padding: 1rem;
+    }
+    .result-stat-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--rust-muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+    .result-stat-val {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 1.3rem;
+      color: var(--rust-bright);
+    }
+
+    /* round log */
+    .round-log {
+      text-align: left;
+      margin-bottom: 2.5rem;
+    }
+    .round-log-title {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--rust-muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.8rem;
+    }
+    .round-log-item {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.55rem 0;
+      border-bottom: 1px solid var(--rust-border);
+      font-size: 0.9rem;
+    }
+    .round-log-num {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--rust-muted);
+      min-width: 2rem;
+    }
+    .round-log-icon { font-size: 0.9rem; min-width: 1.2rem; }
+    .round-log-name { flex: 1; color: var(--rust-text); }
+    .round-log-pts {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--rust-amber);
+    }
+    .tag-correct { color: #6fcf7c; }
+    .tag-wrong { color: #cf6f6f; }
+    .tag-timeout { color: var(--rust-amber); }
+
+    .result-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">RUST <span>MONUMENT</span> QUIZ</div>
+  <div class="header-badge">v1.0 // WIPE READY</div>
+</header>
+
+<!-- ══════════════════════════════════════════════ START -->
+<div id="screen-start" class="screen active">
+  <div class="start-title">Kennst du<br><em>die Map?</em></div>
+  <div class="start-subtitle">// Monument Erkennungs-Quiz</div>
+
+  <div class="start-info-grid">
+    <div class="start-info-cell">
+      <div class="start-info-label">Monumente</div>
+      <div class="start-info-val">20</div>
+    </div>
+    <div class="start-info-cell">
+      <div class="start-info-label">Auswahl</div>
+      <div class="start-info-val">Immer alle</div>
+    </div>
+    <div class="start-info-cell">
+      <div class="start-info-label">Timer / Runde</div>
+      <div class="start-info-val">30 Sek</div>
+    </div>
+  </div>
+
+  <div class="round-selector">
+    <label>Rundenanzahl:</label>
+    <button class="round-btn" data-rounds="5">5</button>
+    <button class="round-btn active" data-rounds="10">10</button>
+    <button class="round-btn" data-rounds="15">15</button>
+    <button class="round-btn" data-rounds="20">20</button>
+  </div>
+
+  <button class="btn-primary" id="btn-start">▶ SPIEL STARTEN</button>
+</div>
+
+<!-- ══════════════════════════════════════════════ GAME -->
+<div id="screen-game" class="screen">
+
+  <div class="game-topbar">
+    <div class="progress-wrap">
+      <div class="progress-label">Runde <span id="round-current">1</span> / <span id="round-total">10</span></div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="score-display">
+      <span>Score</span>
+      <strong id="score-display">0</strong>
+    </div>
+  </div>
+
+  <div class="timer-row">
+    <div class="timer-bar-bg">
+      <div class="timer-bar-fill" id="timer-fill" style="width:100%"></div>
+    </div>
+    <div class="timer-number" id="timer-number">30</div>
+  </div>
+
+  <div class="image-zone" id="image-zone">
+    <div class="clue-counter" id="clue-counter">BILD 1 / 3</div>
+    <div id="image-placeholder" class="no-image-placeholder">
+      <div class="icon-big">📷</div>
+      <div class="placeholder-name" id="placeholder-name">Lade Bild...</div>
+      <div class="placeholder-hint">BILD HIER EINFÜGEN</div>
+    </div>
+    <img id="clue-img" src="" alt="Monument Clue" style="display:none;" />
+    <div class="clue-nav" id="clue-nav"></div>
+  </div>
+
+  <div class="answer-section-label">— Welches Monument ist das? —</div>
+  <div class="answer-grid" id="answer-grid"></div>
+
+  <div class="feedback-bar">
+    <div class="feedback-text" id="feedback-text"></div>
+    <div class="points-earned" id="points-earned"></div>
+  </div>
+
+  <div style="text-align:center;">
+    <button class="btn-secondary" id="btn-next" style="display:none;">NÄCHSTE RUNDE →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ RESULT -->
+<div id="screen-result" class="screen">
+  <div class="result-title">Runde beendet</div>
+  <div class="result-rank" id="result-rank"></div>
+  <div class="result-score-big" id="result-score">0</div>
+  <div class="result-score-sub">PUNKTE GESAMT</div>
+
+  <div class="result-stats-grid">
+    <div class="result-stat-cell">
+      <div class="result-stat-label">Richtig</div>
+      <div class="result-stat-val" id="stat-correct">0</div>
+    </div>
+    <div class="result-stat-cell">
+      <div class="result-stat-label">Falsch</div>
+      <div class="result-stat-val" id="stat-wrong">0</div>
+    </div>
+    <div class="result-stat-cell">
+      <div class="result-stat-label">Timeout</div>
+      <div class="result-stat-val" id="stat-timeout">0</div>
+    </div>
+  </div>
+
+  <div class="round-log">
+    <div class="round-log-title">— Rundenübersicht —</div>
+    <div id="round-log-list"></div>
+  </div>
+
+  <div class="result-actions">
+    <button class="btn-primary" id="btn-play-again">↺ NOCHMAL SPIELEN</button>
+    <button class="btn-secondary" id="btn-back-start">← ZUM MENÜ</button>
+  </div>
+</div>
+
+<script>
+  // ─── DATA ───────────────────────────────────────────────────────────────
+  let MONUMENTS = [];
+  let selectedRounds = 10;
+  let gameState = {};
+
+  const TIMER_SECONDS = 30;
+  const POINTS_BASE = 100;
+  const POINTS_TIME_BONUS = 50; // max extra for speed
+
+  // ─── FETCH DATA ──────────────────────────────────────────────────────────
+  async function loadMonuments() {
+    try {
+      const res = await fetch('data/monuments.json');
+      MONUMENTS = await res.json();
+    } catch (e) {
+      console.warn('Could not load monuments.json, using built-in list');
+      MONUMENTS = FALLBACK_MONUMENTS;
+    }
+    initStartScreen();
+  }
+
+  // Fallback if JSON not found (for local dev)
+  const FALLBACK_MONUMENTS = [
+    { id: 'launch_site',    name: 'Launch Site',          clues: [], full: '' },
+    { id: 'airfield',       name: 'Airfield',             clues: [], full: '' },
+    { id: 'military_tunnel',name: 'Military Tunnel',      clues: [], full: '' },
+    { id: 'power_plant',    name: 'Power Plant',          clues: [], full: '' },
+    { id: 'water_treatment',name: 'Water Treatment',      clues: [], full: '' },
+    { id: 'harbor',         name: 'Harbor',               clues: [], full: '' },
+    { id: 'dome',           name: 'The Dome',             clues: [], full: '' },
+    { id: 'satellite_dish', name: 'Satellite Dish',       clues: [], full: '' },
+    { id: 'bandit_camp',    name: 'Bandit Camp',          clues: [], full: '' },
+    { id: 'outpost',        name: 'Outpost',              clues: [], full: '' },
+    { id: 'supermarket',    name: 'Supermarket',          clues: [], full: '' },
+    { id: 'gas_station',    name: 'Gas Station',          clues: [], full: '' },
+    { id: 'lighthouse',     name: 'Lighthouse',           clues: [], full: '' },
+    { id: 'junkyard',       name: 'Junkyard',             clues: [], full: '' },
+    { id: 'sewer_branch',   name: 'Sewer Branch',         clues: [], full: '' },
+    { id: 'small_oil_rig',  name: 'Small Oil Rig',        clues: [], full: '' },
+    { id: 'large_oil_rig',  name: 'Large Oil Rig',        clues: [], full: '' },
+    { id: 'underwater_lab', name: 'Underwater Lab',       clues: [], full: '' },
+    { id: 'trainyard',      name: 'Train Yard',           clues: [], full: '' },
+    { id: 'arctic_base',    name: 'Arctic Research Base', clues: [], full: '' },
+  ];
+
+  // ─── UI HELPERS ───────────────────────────────────────────────────────────
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // ─── START SCREEN ─────────────────────────────────────────────────────────
+  function initStartScreen() {
+    document.querySelectorAll('.round-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.round-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedRounds = parseInt(btn.dataset.rounds);
+      });
+    });
+    document.getElementById('btn-start').addEventListener('click', startGame);
+  }
+
+  // ─── GAME LOGIC ───────────────────────────────────────────────────────────
+  function startGame() {
+    const total = Math.min(selectedRounds, MONUMENTS.length);
+    const roundMonuments = shuffle(MONUMENTS).slice(0, total);
+
+    gameState = {
+      rounds: roundMonuments,
+      total,
+      current: 0,
+      score: 0,
+      log: [],
+      correct: 0,
+      wrong: 0,
+      timeout: 0,
+      answered: false,
+      timerInterval: null,
+      timeLeft: TIMER_SECONDS,
+      currentClue: 0,
+    };
+
+    document.getElementById('round-total').textContent = total;
+    showScreen('screen-game');
+    loadRound();
+  }
+
+  function loadRound() {
+    const gs = gameState;
+    const mon = gs.rounds[gs.current];
+    gs.answered = false;
+    gs.timeLeft = TIMER_SECONDS;
+    gs.currentClue = 0;
+
+    // progress
+    document.getElementById('round-current').textContent = gs.current + 1;
+    const pct = (gs.current / gs.total) * 100;
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('score-display').textContent = gs.score;
+
+    // feedback reset
+    document.getElementById('feedback-text').textContent = '';
+    document.getElementById('feedback-text').className = 'feedback-text';
+    document.getElementById('points-earned').textContent = '';
+    document.getElementById('btn-next').style.display = 'none';
+
+    // image
+    renderClue(mon);
+
+    // answers — always all monuments, shuffled
+    renderAnswers(mon);
+
+    // timer
+    startTimer(mon);
+  }
+
+  function renderClue(mon) {
+    const img = document.getElementById('clue-img');
+    const placeholder = document.getElementById('image-placeholder');
+    const counter = document.getElementById('clue-counter');
+    const nav = document.getElementById('clue-nav');
+    const gs = gameState;
+
+    const clues = mon.clues || [];
+    const numClues = clues.length;
+
+    nav.innerHTML = '';
+    for (let i = 0; i < numClues; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'clue-dot' + (i === 0 ? ' active' : '');
+      dot.addEventListener('click', () => switchClue(mon, i));
+      nav.appendChild(dot);
+    }
+
+    if (numClues > 0) {
+      showClue(mon, 0);
+    } else {
+      img.style.display = 'none';
+      placeholder.style.display = 'flex';
+      document.getElementById('placeholder-name').textContent = mon.id.toUpperCase().replace(/_/g,' ');
+      counter.textContent = 'KEIN BILD';
+    }
+
+    counter.textContent = numClues > 0 ? `BILD 1 / ${numClues}` : 'KEIN BILD';
+  }
+
+  function showClue(mon, idx) {
+    const img = document.getElementById('clue-img');
+    const placeholder = document.getElementById('image-placeholder');
+    const counter = document.getElementById('clue-counter');
+    const clues = mon.clues || [];
+
+    gameState.currentClue = idx;
+    document.querySelectorAll('.clue-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === idx);
+    });
+
+    if (clues[idx]) {
+      img.src = clues[idx];
+      img.style.display = 'block';
+      placeholder.style.display = 'none';
+      counter.textContent = `BILD ${idx + 1} / ${clues.length}`;
+    }
+  }
+
+  function switchClue(mon, idx) {
+    showClue(mon, idx);
+  }
+
+  function renderAnswers(correctMon) {
+    const grid = document.getElementById('answer-grid');
+    grid.innerHTML = '';
+
+    const allShuffled = shuffle(MONUMENTS);
+
+    allShuffled.forEach(mon => {
+      const btn = document.createElement('button');
+      btn.className = 'answer-btn';
+      btn.textContent = mon.name;
+      btn.dataset.id = mon.id;
+      btn.addEventListener('click', () => handleAnswer(mon.id, correctMon.id, btn));
+      grid.appendChild(btn);
+    });
+  }
+
+  function handleAnswer(selectedId, correctId, clickedBtn) {
+    if (gameState.answered) return;
+    gameState.answered = true;
+    clearInterval(gameState.timerInterval);
+
+    const isCorrect = selectedId === correctId;
+    const timeBonus = Math.round((gameState.timeLeft / TIMER_SECONDS) * POINTS_TIME_BONUS);
+    let pointsEarned = 0;
+
+    // highlight buttons
+    document.querySelectorAll('.answer-btn').forEach(btn => {
+      btn.disabled = true;
+      if (btn.dataset.id === correctId) btn.classList.add('correct');
+    });
+
+    if (isCorrect) {
+      pointsEarned = POINTS_BASE + timeBonus;
+      gameState.score += pointsEarned;
+      gameState.correct++;
+      setFeedback('✓ RICHTIG!', 'correct', `+${pointsEarned} Punkte`);
+      gameState.log.push({ mon: correctId, status: 'correct', pts: pointsEarned });
+    } else {
+      clickedBtn.classList.add('wrong');
+      gameState.wrong++;
+      setFeedback('✗ FALSCH', 'wrong', '+0');
+      gameState.log.push({ mon: correctId, status: 'wrong', pts: 0 });
+    }
+
+    document.getElementById('score-display').textContent = gameState.score;
+    document.getElementById('btn-next').style.display = 'inline-block';
+  }
+
+  function handleTimeout() {
+    if (gameState.answered) return;
+    gameState.answered = true;
+
+    document.querySelectorAll('.answer-btn').forEach(btn => {
+      btn.disabled = true;
+      const correctMon = gameState.rounds[gameState.current];
+      if (btn.dataset.id === correctMon.id) btn.classList.add('correct');
+    });
+
+    gameState.timeout++;
+    const correctMon = gameState.rounds[gameState.current];
+    setFeedback('⏱ TIMEOUT', 'timeout', '+0');
+    gameState.log.push({ mon: correctMon.id, status: 'timeout', pts: 0 });
+    document.getElementById('btn-next').style.display = 'inline-block';
+  }
+
+  function setFeedback(text, cls, pts) {
+    const el = document.getElementById('feedback-text');
+    el.textContent = text;
+    el.className = 'feedback-text ' + cls;
+    document.getElementById('points-earned').textContent = pts;
+  }
+
+  function startTimer(mon) {
+    const fill = document.getElementById('timer-fill');
+    const num = document.getElementById('timer-number');
+    fill.style.transition = 'none';
+    fill.style.width = '100%';
+    fill.classList.remove('urgent');
+    num.textContent = TIMER_SECONDS;
+
+    let t = TIMER_SECONDS;
+    gameState.timerInterval = setInterval(() => {
+      t--;
+      gameState.timeLeft = t;
+      const pct = (t / TIMER_SECONDS) * 100;
+      fill.style.transition = 'width 1s linear';
+      fill.style.width = pct + '%';
+      num.textContent = t;
+      if (t <= 8) fill.classList.add('urgent');
+      if (t <= 0) {
+        clearInterval(gameState.timerInterval);
+        handleTimeout();
+      }
+    }, 1000);
+  }
+
+  // next round btn
+  document.getElementById('btn-next').addEventListener('click', () => {
+    gameState.current++;
+    if (gameState.current >= gameState.total) {
+      showResults();
+    } else {
+      loadRound();
+    }
+  });
+
+  // ─── RESULTS ──────────────────────────────────────────────────────────────
+  function getRank(score, total) {
+    const pct = gameState.correct / total;
+    if (pct >= 0.9) return '// VETERAN RAIDER';
+    if (pct >= 0.7) return '// EXPERIENCED SURVIVOR';
+    if (pct >= 0.5) return '// AVERAGE NAKEDS';
+    if (pct >= 0.3) return '// FRESH SPAWN';
+    return '// JUST WOKE UP ON BEACH';
+  }
+
+  function showResults() {
+    const gs = gameState;
+    document.getElementById('result-score').textContent = gs.score;
+    document.getElementById('result-rank').textContent = getRank(gs.score, gs.total);
+    document.getElementById('stat-correct').textContent = gs.correct;
+    document.getElementById('stat-wrong').textContent = gs.wrong;
+    document.getElementById('stat-timeout').textContent = gs.timeout;
+
+    const logEl = document.getElementById('round-log-list');
+    logEl.innerHTML = '';
+    gs.log.forEach((entry, i) => {
+      const mon = MONUMENTS.find(m => m.id === entry.mon);
+      const name = mon ? mon.name : entry.mon;
+      const icons = { correct: '✓', wrong: '✗', timeout: '⏱' };
+      const tags = { correct: 'tag-correct', wrong: 'tag-wrong', timeout: 'tag-timeout' };
+      const div = document.createElement('div');
+      div.className = 'round-log-item';
+      div.innerHTML = `
+        <span class="round-log-num">#${String(i+1).padStart(2,'0')}</span>
+        <span class="round-log-icon ${tags[entry.status]}">${icons[entry.status]}</span>
+        <span class="round-log-name">${name}</span>
+        <span class="round-log-pts">${entry.pts > 0 ? '+' + entry.pts : '0'}</span>
+      `;
+      logEl.appendChild(div);
+    });
+
+    showScreen('screen-result');
+  }
+
+  document.getElementById('btn-play-again').addEventListener('click', startGame);
+  document.getElementById('btn-back-start').addEventListener('click', () => showScreen('screen-start'));
+
+  // ─── INIT ──────────────────────────────────────────────────────────────────
+  loadMonuments();
+</script>
+</body>
+</html>

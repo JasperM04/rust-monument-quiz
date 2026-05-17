@@ -1,0 +1,202 @@
+[
+  {
+    "id": "launch_site",
+    "name": "Launch Site",
+    "clues": [
+      "images/launch_site/clue1.jpg",
+      "images/launch_site/clue2.jpg",
+      "images/launch_site/clue3.jpg"
+    ],
+    "full": "images/launch_site/full.jpg"
+  },
+  {
+    "id": "airfield",
+    "name": "Airfield",
+    "clues": [
+      "images/airfield/clue1.jpg",
+      "images/airfield/clue2.jpg",
+      "images/airfield/clue3.jpg"
+    ],
+    "full": "images/airfield/full.jpg"
+  },
+  {
+    "id": "military_tunnel",
+    "name": "Military Tunnel",
+    "clues": [
+      "images/military_tunnel/clue1.jpg",
+      "images/military_tunnel/clue2.jpg",
+      "images/military_tunnel/clue3.jpg"
+    ],
+    "full": "images/military_tunnel/full.jpg"
+  },
+  {
+    "id": "power_plant",
+    "name": "Power Plant",
+    "clues": [
+      "images/power_plant/clue1.jpg",
+      "images/power_plant/clue2.jpg",
+      "images/power_plant/clue3.jpg"
+    ],
+    "full": "images/power_plant/full.jpg"
+  },
+  {
+    "id": "water_treatment",
+    "name": "Water Treatment",
+    "clues": [
+      "images/water_treatment/clue1.jpg",
+      "images/water_treatment/clue2.jpg",
+      "images/water_treatment/clue3.jpg"
+    ],
+    "full": "images/water_treatment/full.jpg"
+  },
+  {
+    "id": "harbor",
+    "name": "Harbor",
+    "clues": [
+      "images/harbor/clue1.jpg",
+      "images/harbor/clue2.jpg",
+      "images/harbor/clue3.jpg"
+    ],
+    "full": "images/harbor/full.jpg"
+  },
+  {
+    "id": "dome",
+    "name": "The Dome",
+    "clues": [
+      "images/dome/clue1.jpg",
+      "images/dome/clue2.jpg",
+      "images/dome/clue3.jpg"
+    ],
+    "full": "images/dome/full.jpg"
+  },
+  {
+    "id": "satellite_dish",
+    "name": "Satellite Dish",
+    "clues": [
+      "images/satellite_dish/clue1.jpg",
+      "images/satellite_dish/clue2.jpg",
+      "images/satellite_dish/clue3.jpg"
+    ],
+    "full": "images/satellite_dish/full.jpg"
+  },
+  {
+    "id": "bandit_camp",
+    "name": "Bandit Camp",
+    "clues": [
+      "images/bandit_camp/clue1.jpg",
+      "images/bandit_camp/clue2.jpg",
+      "images/bandit_camp/clue3.jpg"
+    ],
+    "full": "images/bandit_camp/full.jpg"
+  },
+  {
+    "id": "outpost",
+    "name": "Outpost",
+    "clues": [
+      "images/outpost/clue1.jpg",
+      "images/outpost/clue2.jpg",
+      "images/outpost/clue3.jpg"
+    ],
+    "full": "images/outpost/full.jpg"
+  },
+  {
+    "id": "supermarket",
+    "name": "Supermarket",
+    "clues": [
+      "images/supermarket/clue1.jpg",
+      "images/supermarket/clue2.jpg",
+      "images/supermarket/clue3.jpg"
+    ],
+    "full": "images/supermarket/full.jpg"
+  },
+  {
+    "id": "gas_station",
+    "name": "Gas Station",
+    "clues": [
+      "images/gas_station/clue1.jpg",
+      "images/gas_station/clue2.jpg",
+      "images/gas_station/clue3.jpg"
+    ],
+    "full": "images/gas_station/full.jpg"
+  },
+  {
+    "id": "lighthouse",
+    "name": "Lighthouse",
+    "clues": [
+      "images/lighthouse/clue1.jpg",
+      "images/lighthouse/clue2.jpg",
+      "images/lighthouse/clue3.jpg"
+    ],
+    "full": "images/lighthouse/full.jpg"
+  },
+  {
+    "id": "junkyard",
+    "name": "Junkyard",
+    "clues": [
+      "images/junkyard/clue1.jpg",
+      "images/junkyard/clue2.jpg",
+      "images/junkyard/clue3.jpg"
+    ],
+    "full": "images/junkyard/full.jpg"
+  },
+  {
+    "id": "sewer_branch",
+    "name": "Sewer Branch",
+    "clues": [
+      "images/sewer_branch/clue1.jpg",
+      "images/sewer_branch/clue2.jpg",
+      "images/sewer_branch/clue3.jpg"
+    ],
+    "full": "images/sewer_branch/full.jpg"
+  },
+  {
+    "id": "small_oil_rig",
+    "name": "Small Oil Rig",
+    "clues": [
+      "images/small_oil_rig/clue1.jpg",
+      "images/small_oil_rig/clue2.jpg",
+      "images/small_oil_rig/clue3.jpg"
+    ],
+    "full": "images/small_oil_rig/full.jpg"
+  },
+  {
+    "id": "large_oil_rig",
+    "name": "Large Oil Rig",
+    "clues": [
+      "images/large_oil_rig/clue1.jpg",
+      "images/large_oil_rig/clue2.jpg",
+      "images/large_oil_rig/clue3.jpg"
+    ],
+    "full": "images/large_oil_rig/full.jpg"
+  },
+  {
+    "id": "underwater_lab",
+    "name": "Underwater Lab",
+    "clues": [
+      "images/underwater_lab/clue1.jpg",
+      "images/underwater_lab/clue2.jpg",
+      "images/underwater_lab/clue3.jpg"
+    ],
+    "full": "images/underwater_lab/full.jpg"
+  },
+  {
+    "id": "trainyard",
+    "name": "Train Yard",
+    "clues": [
+      "images/trainyard/clue1.jpg",
+      "images/trainyard/clue2.jpg",
+      "images/trainyard/clue3.jpg"
+    ],
+    "full": "images/trainyard/full.jpg"
+  },
+  {
+    "id": "arctic_base",
+    "name": "Arctic Research Base",
+    "clues": [
+      "images/arctic_base/clue1.jpg",
+      "images/arctic_base/clue2.jpg",
+      "images/arctic_base/clue3.jpg"
+    ],
+    "full": "images/arctic_base/full.jpg"
+  }
+]
