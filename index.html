@@ -767,6 +767,7 @@
     try {
       const res = await fetch('data/monuments.json');
       MONUMENTS = await res.json();
+      MONUMENTS = MONUMENTS.filter(m => m.active !== false);
     } catch (e) {
       console.warn('Could not load monuments.json, using built-in list');
       MONUMENTS = FALLBACK_MONUMENTS;
@@ -1064,7 +1065,7 @@
     const grid = document.getElementById('answer-grid');
     grid.innerHTML = '';
 
-    const allShuffled = shuffle(MONUMENTS);
+    const allShuffled = [...MONUMENTS].sort((a, b) => a.name.localeCompare(b.name));
 
     allShuffled.forEach(mon => {
       const btn = document.createElement('button');

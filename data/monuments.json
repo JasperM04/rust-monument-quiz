@@ -2,6 +2,7 @@
   {
     "id": "launch_site",
     "name": "Launch Site",
+    "active": false,
     "clues": [
       "images/launch_site/clue1.jpg",
       "images/launch_site/clue2.jpg",
@@ -22,6 +23,7 @@
   {
     "id": "military_tunnel",
     "name": "Military Tunnel",
+    "active": false,
     "clues": [
       "images/military_tunnel/clue1.jpg",
       "images/military_tunnel/clue2.jpg",
@@ -32,6 +34,7 @@
   {
     "id": "power_plant",
     "name": "Power Plant",
+    "active": false,
     "clues": [
       "images/power_plant/clue1.jpg",
       "images/power_plant/clue2.jpg",
@@ -80,18 +83,20 @@
     "full": "images/satellite_dish/full.jpg"
   },
   {
-    "id": "bandit_camp",
-    "name": "Bandit Camp",
+    "id": "military_base",
+    "name": "Abandoned Military Base",
+    "active": false,
     "clues": [
-      "images/bandit_camp/clue1.jpg",
-      "images/bandit_camp/clue2.jpg",
-      "images/bandit_camp/clue3.jpg"
+      "images/military_base/clue1.jpg",
+      "images/military_base/clue2.jpg",
+      "images/military_base/clue3.jpg"
     ],
-    "full": "images/bandit_camp/full.jpg"
+    "full": "images/military_base/full.jpg"
   },
   {
     "id": "outpost",
     "name": "Outpost",
+    "active": false,
     "clues": [
       "images/outpost/clue1.jpg",
       "images/outpost/clue2.jpg",
@@ -122,6 +127,7 @@
   {
     "id": "lighthouse",
     "name": "Lighthouse",
+    "active": false,
     "clues": [
       "images/lighthouse/clue1.jpg",
       "images/lighthouse/clue2.jpg",
@@ -162,6 +168,7 @@
   {
     "id": "large_oil_rig",
     "name": "Large Oil Rig",
+    "active": false,
     "clues": [
       "images/large_oil_rig/clue1.jpg",
       "images/large_oil_rig/clue2.jpg",
@@ -172,6 +179,7 @@
   {
     "id": "underwater_lab",
     "name": "Underwater Lab",
+    "active": false,
     "clues": [
       "images/underwater_lab/clue1.jpg",
       "images/underwater_lab/clue2.jpg",
