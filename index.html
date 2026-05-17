@@ -354,10 +354,61 @@
       width: 6px; height: 6px;
       border-radius: 50%;
       background: var(--rust-border);
-      cursor: pointer;
+      cursor: default;
       transition: background 0.15s;
     }
-    .clue-dot.active { background: var(--rust-orange); }
+    .clue-dot.active   { background: var(--rust-orange); }
+    .clue-dot.unlocked { background: var(--rust-muted); cursor: pointer; }
+
+    /* Slideshow countdown strip */
+    .clue-countdown {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--rust-border);
+    }
+    .clue-countdown-fill {
+      height: 100%;
+      background: var(--rust-amber);
+      width: 100%;
+      transition: none;
+    }
+
+    /* Next-clue flash label */
+    .clue-incoming {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(13,14,12,0.75);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--rust-amber);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .clue-incoming.visible { opacity: 1; }
+
+    /* Full-image reveal overlay */
+    .full-reveal-badge {
+      position: absolute;
+      top: 0.6rem;
+      left: 0.6rem;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--rust-orange);
+      background: rgba(13,14,12,0.85);
+      padding: 0.25rem 0.5rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      display: none;
+    }
 
     /* answer grid */
     .answer-section-label {
@@ -613,6 +664,11 @@
     </div>
     <img id="clue-img" src="" alt="Monument Clue" style="display:none;" />
     <div class="clue-nav" id="clue-nav"></div>
+    <div class="clue-countdown" id="clue-countdown" style="display:none;">
+      <div class="clue-countdown-fill" id="clue-countdown-fill"></div>
+    </div>
+    <div class="clue-incoming" id="clue-incoming"></div>
+    <div class="full-reveal-badge" id="full-reveal-badge">▶ AUFLÖSUNG</div>
   </div>
 
   <div class="answer-section-label">— Welches Monument ist das? —</div>
@@ -765,6 +821,7 @@
     gs.answered = false;
     gs.timeLeft = TIMER_SECONDS;
     gs.currentClue = 0;
+    gs.slideshowTimeouts = [];
 
     // progress
     document.getElementById('round-current').textContent = gs.current + 1;
@@ -788,57 +845,150 @@
     startTimer(mon);
   }
 
+  // Seconds at which each clue becomes visible (clue 0 immediately, clue 1 at 7s elapsed, clue 2 at 14s elapsed)
+  const CLUE_REVEAL_AT = [0, 7, 14]; // seconds elapsed since round start
+
   function renderClue(mon) {
-    const img = document.getElementById('clue-img');
+    const img         = document.getElementById('clue-img');
     const placeholder = document.getElementById('image-placeholder');
-    const counter = document.getElementById('clue-counter');
-    const nav = document.getElementById('clue-nav');
-    const gs = gameState;
+    const counter     = document.getElementById('clue-counter');
+    const nav         = document.getElementById('clue-nav');
+    const badge       = document.getElementById('full-reveal-badge');
 
     const clues = mon.clues || [];
     const numClues = clues.length;
 
+    badge.style.display = 'none';
     nav.innerHTML = '';
+
     for (let i = 0; i < numClues; i++) {
       const dot = document.createElement('div');
       dot.className = 'clue-dot' + (i === 0 ? ' active' : '');
-      dot.addEventListener('click', () => switchClue(mon, i));
+      dot.id = `clue-dot-${i}`;
+      // only unlocked dots are clickable (unlocked = already revealed)
+      dot.addEventListener('click', () => {
+        if (dot.classList.contains('unlocked') || dot.classList.contains('active')) {
+          clearSlideshowCountdown();
+          showClue(mon, i);
+        }
+      });
       nav.appendChild(dot);
     }
 
     if (numClues > 0) {
       showClue(mon, 0);
+      scheduleClueSlideshow(mon);
     } else {
       img.style.display = 'none';
       placeholder.style.display = 'flex';
       document.getElementById('placeholder-name').textContent = mon.id.toUpperCase().replace(/_/g,' ');
       counter.textContent = 'KEIN BILD';
     }
-
-    counter.textContent = numClues > 0 ? `BILD 1 / ${numClues}` : 'KEIN BILD';
   }
 
   function showClue(mon, idx) {
-    const img = document.getElementById('clue-img');
+    const img         = document.getElementById('clue-img');
     const placeholder = document.getElementById('image-placeholder');
-    const counter = document.getElementById('clue-counter');
-    const clues = mon.clues || [];
+    const counter     = document.getElementById('clue-counter');
+    const incoming    = document.getElementById('clue-incoming');
+    const clues       = mon.clues || [];
+
+    // hide incoming flash
+    incoming.classList.remove('visible');
 
     gameState.currentClue = idx;
+
+    // update dots
     document.querySelectorAll('.clue-dot').forEach((d, i) => {
-      d.classList.toggle('active', i === idx);
+      d.classList.remove('active');
+      if (i < idx)       d.classList.add('unlocked');
+      if (i === idx)     d.classList.add('active');
     });
 
     if (clues[idx]) {
       img.src = clues[idx];
       img.style.display = 'block';
       placeholder.style.display = 'none';
-      counter.textContent = `BILD ${idx + 1} / ${clues.length}`;
+      counter.textContent = `HINWEIS ${idx + 1} / ${clues.length}`;
     }
   }
 
-  function switchClue(mon, idx) {
-    showClue(mon, idx);
+  // Shows the full image after answer (reveal)
+  function showFullImage(mon) {
+    const img    = document.getElementById('clue-img');
+    const badge  = document.getElementById('full-reveal-badge');
+    const counter = document.getElementById('clue-counter');
+
+    clearSlideshowCountdown();
+
+    if (mon.full) {
+      img.src = mon.full;
+      img.style.display = 'block';
+      document.getElementById('image-placeholder').style.display = 'none';
+    }
+    badge.style.display = 'block';
+    counter.textContent = 'AUFLÖSUNG';
+
+    // lock all dots as unlocked (greyed, not clickable to switch anymore)
+    document.querySelectorAll('.clue-dot').forEach(d => {
+      d.classList.remove('active');
+      d.classList.add('unlocked');
+    });
+  }
+
+  // ── Slideshow scheduler ────────────────────────────────────────────────────
+  function scheduleClueSlideshow(mon) {
+    clearSlideshowCountdown();
+    const clues = mon.clues || [];
+    gameState.slideshowTimeouts = [];
+
+    clues.forEach((_, idx) => {
+      if (idx === 0) return; // clue 0 shown immediately
+      const revealAt = CLUE_REVEAL_AT[idx] ?? (idx * 7);
+
+      const t = setTimeout(() => {
+        if (gameState.answered) return;
+        // flash "nächster hinweis"
+        const incoming = document.getElementById('clue-incoming');
+        incoming.textContent = `HINWEIS ${idx + 1} WIRD AUFGEDECKT…`;
+        incoming.classList.add('visible');
+        setTimeout(() => {
+          if (gameState.answered) return;
+          showClue(mon, idx);
+          // if more clues follow, start countdown bar to next
+          if (idx < clues.length - 1) {
+            const nextReveal = CLUE_REVEAL_AT[idx + 1] ?? ((idx + 1) * 7);
+            startCountdownBar(nextReveal - revealAt);
+          }
+        }, 600);
+      }, revealAt * 1000);
+
+      gameState.slideshowTimeouts.push(t);
+
+      // start first countdown bar toward clue 1
+      if (idx === 1) startCountdownBar(revealAt);
+    });
+  }
+
+  function startCountdownBar(durationSec) {
+    const wrap = document.getElementById('clue-countdown');
+    const fill = document.getElementById('clue-countdown-fill');
+    wrap.style.display = 'block';
+    fill.style.transition = 'none';
+    fill.style.width = '100%';
+    // trigger reflow then animate
+    void fill.offsetWidth;
+    fill.style.transition = `width ${durationSec}s linear`;
+    fill.style.width = '0%';
+  }
+
+  function clearSlideshowCountdown() {
+    (gameState.slideshowTimeouts || []).forEach(t => clearTimeout(t));
+    gameState.slideshowTimeouts = [];
+    const wrap = document.getElementById('clue-countdown');
+    if (wrap) wrap.style.display = 'none';
+    const fill = document.getElementById('clue-countdown-fill');
+    if (fill) { fill.style.transition = 'none'; fill.style.width = '100%'; }
   }
 
   function renderAnswers(correctMon) {
@@ -861,6 +1011,7 @@
     if (gameState.answered) return;
     gameState.answered = true;
     clearInterval(gameState.timerInterval);
+    clearSlideshowCountdown();
 
     const isCorrect = selectedId === correctId;
     const timeBonus = Math.round((gameState.timeLeft / TIMER_SECONDS) * POINTS_TIME_BONUS);
@@ -887,11 +1038,16 @@
 
     document.getElementById('score-display').textContent = gameState.score;
     document.getElementById('btn-next').style.display = 'inline-block';
+
+    // show full image as reveal
+    const correctMon = gameState.rounds[gameState.current];
+    showFullImage(correctMon);
   }
 
   function handleTimeout() {
     if (gameState.answered) return;
     gameState.answered = true;
+    clearSlideshowCountdown();
 
     document.querySelectorAll('.answer-btn').forEach(btn => {
       btn.disabled = true;
@@ -904,6 +1060,8 @@
     setFeedback('⏱ TIMEOUT', 'timeout', '+0');
     gameState.log.push({ mon: correctMon.id, status: 'timeout', pts: 0 });
     document.getElementById('btn-next').style.display = 'inline-block';
+
+    showFullImage(correctMon);
   }
 
   function setFeedback(text, cls, pts) {
