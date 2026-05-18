@@ -624,7 +624,8 @@
     .tag-wrong { color: #cf6f6f; }
     .tag-timeout { color: var(--rust-amber); }
 
-    .result-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    #player-name-input:focus { border-color: var(--rust-orange); }
+    #player-name-input::placeholder { color: var(--rust-muted); }
   </style>
 </head>
 <body>
@@ -748,7 +749,50 @@
 
   <div class="result-actions">
     <button class="btn-primary" id="btn-play-again">↺ NOCHMAL SPIELEN</button>
+    <button class="btn-secondary" id="btn-leaderboard">🏆 BESTENLISTE</button>
     <button class="btn-secondary" id="btn-back-start">← ZUM MENÜ</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ NAME ENTRY -->
+<div id="screen-name" class="screen">
+  <div style="max-width:480px;margin:0 auto;padding:4rem 1.5rem;text-align:center;">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:var(--rust-muted);letter-spacing:.15em;text-transform:uppercase;margin-bottom:.6rem;">// Score eintragen</div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.5rem;color:var(--rust-bright);text-transform:uppercase;margin-bottom:2rem;">Dein Name</div>
+
+    <input id="player-name-input" type="text" maxlength="20" placeholder="NAME EINGEBEN..."
+      style="width:100%;background:var(--rust-card);border:1px solid var(--rust-border);color:var(--rust-bright);
+             font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:600;letter-spacing:.1em;
+             text-transform:uppercase;padding:.9rem 1rem;outline:none;margin-bottom:1.5rem;
+             text-align:center;transition:border-color .15s;">
+
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <button class="btn-primary" id="btn-submit-score">EINTRAGEN →</button>
+      <button class="btn-secondary" id="btn-skip-score">ÜBERSPRINGEN</button>
+    </div>
+    <div id="submit-status" style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--rust-muted);margin-top:1rem;min-height:1.2rem;letter-spacing:.1em;"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ LEADERBOARD -->
+<div id="screen-leaderboard" class="screen">
+  <div style="max-width:680px;margin:0 auto;padding:2.5rem 1.5rem 3rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;">
+      <div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--rust-muted);letter-spacing:.15em;text-transform:uppercase;margin-bottom:.3rem;">// Global</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.2rem;color:var(--rust-bright);text-transform:uppercase;letter-spacing:.06em;">Bestenliste</div>
+      </div>
+      <button class="btn-secondary" id="lb-refresh" style="font-size:.8rem;">↻ AKTUALISIEREN</button>
+    </div>
+
+    <div id="lb-loading" style="font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--rust-muted);text-align:center;padding:3rem;letter-spacing:.1em;">LADE DATEN...</div>
+    <div id="lb-list" style="display:none;"></div>
+    <div id="lb-error" style="display:none;font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--rust-red);text-align:center;padding:2rem;letter-spacing:.1em;"></div>
+
+    <div style="margin-top:2rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <button class="btn-primary" id="lb-play-again">↺ SPIELEN</button>
+      <button class="btn-secondary" id="lb-back">← MENÜ</button>
+    </div>
   </div>
 </div>
 
@@ -766,11 +810,13 @@
   async function loadMonuments() {
     try {
       const res = await fetch('data/monuments.json');
-      MONUMENTS = await res.json();
-      MONUMENTS = MONUMENTS.filter(m => m.active !== false);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const all = await res.json();
+      MONUMENTS = all.filter(m => m.active !== false);
+      if (MONUMENTS.length === 0) throw new Error('No active monuments');
     } catch (e) {
-      console.warn('Could not load monuments.json, using built-in list');
-      MONUMENTS = FALLBACK_MONUMENTS;
+      console.warn('Could not load monuments.json, using built-in list:', e.message);
+      MONUMENTS = FALLBACK_MONUMENTS.filter(m => m.active !== false);
     }
     initStartScreen();
   }
@@ -1212,10 +1258,166 @@
     });
 
     showScreen('screen-result');
+
+    // after 2s auto-prompt name entry
+    setTimeout(() => {
+      document.getElementById('player-name-input').value = '';
+      document.getElementById('submit-status').textContent = '';
+      document.getElementById('submit-status').style.color = 'var(--rust-muted)';
+      document.getElementById('btn-submit-score').disabled = false;
+      showScreen('screen-name');
+    }, 2200);
   }
 
   document.getElementById('btn-play-again').addEventListener('click', startGame);
   document.getElementById('btn-back-start').addEventListener('click', () => showScreen('screen-start'));
+
+  // ─── LEADERBOARD (JSONBin.io) ──────────────────────────────────────────────
+  // SETUP: 1) Create free account at jsonbin.io
+  //        2) Create a new Bin with content: []
+  //        3) Paste your Master Key and Bin ID below
+  const JSONBIN_BIN_ID  = '6a0b072111c8435a0d44564e';   // z.B. '6642f3...'
+  const JSONBIN_API_KEY = '$2a$10$JRQJFT3V1u/aIHsoSH3a6OheCSwqIWIhYFjNaUExI19rFVtzFBQ9q';    // z.B. '$2a$10$...'
+  const JSONBIN_URL     = `https://api.jsonbin.io/v3/b/${6a0b072111c8435a0d44564e}`;
+
+  async function fetchLeaderboard() {
+    const res = await fetch(JSONBIN_URL + '/latest', {
+      headers: { 'X-Master-Key': JSONBIN_API_KEY }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    return Array.isArray(data.record) ? data.record : [];
+  }
+
+  async function saveLeaderboard(entries) {
+    const res = await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': JSONBIN_API_KEY
+      },
+      body: JSON.stringify(entries)
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+  }
+
+  async function submitScore(name) {
+    const gs = gameState;
+    const entry = {
+      name: name.toUpperCase().trim(),
+      score: gs.score,
+      correct: gs.correct,
+      total: gs.total,
+      date: new Date().toLocaleDateString('de-DE')
+    };
+
+    const status = document.getElementById('submit-status');
+    status.textContent = 'WIRD GESPEICHERT...';
+
+    try {
+      const entries = await fetchLeaderboard();
+      entries.push(entry);
+      // keep top 100 by score
+      entries.sort((a, b) => b.score - a.score);
+      entries.splice(100);
+      await saveLeaderboard(entries);
+      status.textContent = '✓ EINGETRAGEN!';
+      status.style.color = '#6fcf7c';
+      setTimeout(() => showLeaderboard(), 800);
+    } catch (e) {
+      status.textContent = '✗ FEHLER — JSONBin prüfen';
+      status.style.color = '#cf6f6f';
+    }
+  }
+
+  async function showLeaderboard() {
+    showScreen('screen-leaderboard');
+    renderLeaderboard();
+  }
+
+  async function renderLeaderboard() {
+    const loading = document.getElementById('lb-loading');
+    const list    = document.getElementById('lb-list');
+    const error   = document.getElementById('lb-error');
+
+    loading.style.display = 'block';
+    list.style.display    = 'none';
+    error.style.display   = 'none';
+
+    try {
+      const entries = await fetchLeaderboard();
+      loading.style.display = 'none';
+
+      if (entries.length === 0) {
+        list.style.display = 'block';
+        list.innerHTML = `<div style="font-family:'Share Tech Mono',monospace;font-size:.75rem;
+          color:var(--rust-muted);text-align:center;padding:2rem;letter-spacing:.1em;">
+          NOCH KEINE EINTRÄGE</div>`;
+        return;
+      }
+
+      list.style.display = 'block';
+      list.innerHTML = '';
+
+      // header row
+      list.innerHTML = `
+        <div style="display:grid;grid-template-columns:2.5rem 1fr 5rem 6rem;gap:.5rem;
+          padding:.4rem .6rem;border-bottom:1px solid var(--rust-border);
+          font-family:'Share Tech Mono',monospace;font-size:.62rem;
+          color:var(--rust-muted);letter-spacing:.12em;text-transform:uppercase;">
+          <span>#</span><span>NAME</span><span style="text-align:right;">QUOTE</span><span style="text-align:right;">SCORE</span>
+        </div>`;
+
+      entries.forEach((e, i) => {
+        const pct   = Math.round((e.correct / e.total) * 100);
+        const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+        const isTop = i < 3;
+        const row = document.createElement('div');
+        row.style.cssText = `display:grid;grid-template-columns:2.5rem 1fr 5rem 6rem;gap:.5rem;
+          padding:.6rem .6rem;border-bottom:1px solid var(--rust-border);
+          align-items:center;transition:background .15s;`;
+        row.onmouseenter = () => row.style.background = 'rgba(200,90,26,0.06)';
+        row.onmouseleave = () => row.style.background = '';
+        row.innerHTML = `
+          <span style="font-family:'Share Tech Mono',monospace;font-size:.7rem;
+            color:${isTop ? 'var(--rust-amber)' : 'var(--rust-muted)'};">${medal || ('#' + (i+1))}</span>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1rem;
+            letter-spacing:.06em;color:${isTop ? 'var(--rust-bright)' : 'var(--rust-text)'};
+            text-transform:uppercase;">${e.name}</span>
+          <span style="font-family:'Share Tech Mono',monospace;font-size:.72rem;
+            color:var(--rust-muted);text-align:right;">${e.correct}/${e.total} <span style="color:var(--rust-amber)">(${pct}%)</span></span>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.1rem;
+            color:var(--rust-orange);text-align:right;">${e.score}</span>`;
+        list.appendChild(row);
+      });
+    } catch (e) {
+      loading.style.display = 'none';
+      error.style.display   = 'block';
+      error.textContent     = '✗ LADEN FEHLGESCHLAGEN — JSONBin-Zugangsdaten prüfen';
+    }
+  }
+
+  // name entry screen wiring
+  document.getElementById('btn-submit-score').addEventListener('click', () => {
+    const name = document.getElementById('player-name-input').value.trim();
+    if (!name) {
+      document.getElementById('submit-status').textContent = '⚠ BITTE EINEN NAMEN EINGEBEN';
+      document.getElementById('submit-status').style.color = 'var(--rust-amber)';
+      return;
+    }
+    document.getElementById('btn-submit-score').disabled = true;
+    submitScore(name);
+  });
+
+  document.getElementById('player-name-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('btn-submit-score').click();
+  });
+
+  document.getElementById('btn-skip-score').addEventListener('click', () => showLeaderboard());
+  document.getElementById('btn-leaderboard').addEventListener('click', () => showLeaderboard());
+  document.getElementById('lb-refresh').addEventListener('click', () => renderLeaderboard());
+  document.getElementById('lb-play-again').addEventListener('click', startGame);
+  document.getElementById('lb-back').addEventListener('click', () => showScreen('screen-start'));
 
   // ─── INIT ──────────────────────────────────────────────────────────────────
   loadMonuments();
