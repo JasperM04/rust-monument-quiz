@@ -802,9 +802,9 @@
   let selectedRounds = 10;
   let gameState = {};
 
-  const TIMER_SECONDS = 30;
-  const POINTS_BASE = 100;
-  const POINTS_TIME_BONUS = 50; // max extra for speed
+  const TIMER_SECONDS = 20;
+  const POINTS_BASE = 50;
+  const POINTS_TIME_BONUS = 100; // max extra for speed
 
   // ─── FETCH DATA ──────────────────────────────────────────────────────────
   async function loadMonuments() {
@@ -928,7 +928,7 @@
   }
 
   // Seconds at which each clue becomes visible (clue 0 immediately, clue 1 at 7s elapsed, clue 2 at 14s elapsed)
-  const CLUE_REVEAL_AT = [0, 7, 14]; // seconds elapsed since round start
+  const CLUE_REVEAL_AT = [0, 3.5, 7]; // seconds elapsed since round start
 
   function renderClue(mon) {
     const img         = document.getElementById('clue-img');
