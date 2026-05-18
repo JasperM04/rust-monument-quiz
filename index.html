@@ -1359,25 +1359,56 @@
       list.style.display = 'block';
       list.innerHTML = '';
 
+      // filter out invalid entries (init placeholder etc.)
+      const valid = entries.filter(e => e.name && e.score !== undefined && e.total);
+
+      if (valid.length === 0) {
+        list.innerHTML = `<div style="font-family:'Share Tech Mono',monospace;font-size:.75rem;
+          color:var(--rust-muted);text-align:center;padding:2rem;letter-spacing:.1em;">
+          NOCH KEINE EINTRÄGE</div>`;
+        return;
+      }
+
       // header row
       list.innerHTML = `
-        <div style="display:grid;grid-template-columns:2.5rem 1fr 5rem 6rem;gap:.5rem;
+        <div style="display:grid;grid-template-columns:2.5rem 1fr 5rem 6rem 2rem;gap:.5rem;
           padding:.4rem .6rem;border-bottom:1px solid var(--rust-border);
           font-family:'Share Tech Mono',monospace;font-size:.62rem;
           color:var(--rust-muted);letter-spacing:.12em;text-transform:uppercase;">
-          <span>#</span><span>NAME</span><span style="text-align:right;">QUOTE</span><span style="text-align:right;">SCORE</span>
+          <span>#</span><span>NAME</span><span style="text-align:right;">QUOTE</span><span style="text-align:right;">SCORE</span><span></span>
         </div>`;
 
-      entries.forEach((e, i) => {
+      valid.forEach((e, i) => {
         const pct   = Math.round((e.correct / e.total) * 100);
         const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
         const isTop = i < 3;
         const row = document.createElement('div');
-        row.style.cssText = `display:grid;grid-template-columns:2.5rem 1fr 5rem 6rem;gap:.5rem;
+        row.style.cssText = `display:grid;grid-template-columns:2.5rem 1fr 5rem 6rem 2rem;gap:.5rem;
           padding:.6rem .6rem;border-bottom:1px solid var(--rust-border);
           align-items:center;transition:background .15s;`;
         row.onmouseenter = () => row.style.background = 'rgba(200,90,26,0.06)';
         row.onmouseleave = () => row.style.background = '';
+
+        const delBtn = document.createElement('span');
+        delBtn.textContent = '✕';
+        delBtn.title = 'Eintrag löschen';
+        delBtn.style.cssText = `font-size:.7rem;color:var(--rust-muted);cursor:pointer;
+          text-align:right;transition:color .15s;user-select:none;`;
+        delBtn.onmouseenter = () => delBtn.style.color = '#cf6f6f';
+        delBtn.onmouseleave = () => delBtn.style.color = 'var(--rust-muted)';
+        delBtn.onclick = async () => {
+          if (!confirm(`"${e.name}" aus der Bestenliste entfernen?`)) return;
+          try {
+            const all = await fetchLeaderboard();
+            const idx = all.findIndex(x => x.name === e.name && x.score === e.score && x.total === e.total && x.correct === e.correct);
+            if (idx !== -1) all.splice(idx, 1);
+            await saveLeaderboard(all);
+            renderLeaderboard();
+          } catch(err) {
+            alert('Fehler beim Löschen — JSONBin prüfen');
+          }
+        };
+
         row.innerHTML = `
           <span style="font-family:'Share Tech Mono',monospace;font-size:.7rem;
             color:${isTop ? 'var(--rust-amber)' : 'var(--rust-muted)'};">${medal || ('#' + (i+1))}</span>
@@ -1388,6 +1419,7 @@
             color:var(--rust-muted);text-align:right;">${e.correct}/${e.total} <span style="color:var(--rust-amber)">(${pct}%)</span></span>
           <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.1rem;
             color:var(--rust-orange);text-align:right;">${e.score}</span>`;
+        row.appendChild(delBtn);
         list.appendChild(row);
       });
     } catch (e) {
