@@ -112,7 +112,7 @@
     }
     .start-info-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 1px;
       background: var(--rust-border);
       border: 1px solid var(--rust-border);
@@ -631,7 +631,7 @@
 <body>
 
 <header>
-  <div class="logo">RUST <span>MONUMENT</span> QUIZ</div>
+  <div class="logo" id="logo-home" style="cursor:pointer;" title="Zum Hauptmenü">RUST <span>MONUMENT</span> QUIZ</div>
   <div class="header-badge">v1.0 // WIPE READY</div>
 </header>
 
@@ -643,15 +643,11 @@
   <div class="start-info-grid">
     <div class="start-info-cell">
       <div class="start-info-label">Monumente</div>
-      <div class="start-info-val">20</div>
-    </div>
-    <div class="start-info-cell">
-      <div class="start-info-label">Auswahl</div>
-      <div class="start-info-val">Immer alle</div>
+      <div class="start-info-val" id="info-monument-count">–</div>
     </div>
     <div class="start-info-cell">
       <div class="start-info-label">Timer / Runde</div>
-      <div class="start-info-val">30 Sek</div>
+      <div class="start-info-val" id="info-timer">–</div>
     </div>
   </div>
 
@@ -862,6 +858,17 @@
 
   // ─── START SCREEN ─────────────────────────────────────────────────────────
   function initStartScreen() {
+    // dynamic info values
+    document.getElementById('info-monument-count').textContent = MONUMENTS.length;
+    document.getElementById('info-timer').textContent = TIMER_SECONDS + ' Sek';
+
+    // logo → main menu
+    document.getElementById('logo-home').addEventListener('click', () => {
+      clearInterval(gameState.timerInterval);
+      clearSlideshowCountdown && clearSlideshowCountdown();
+      showScreen('screen-start');
+    });
+
     document.querySelectorAll('.round-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.round-btn').forEach(b => b.classList.remove('active'));
