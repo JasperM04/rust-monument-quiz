@@ -1278,7 +1278,7 @@
   //        3) Paste your Master Key and Bin ID below
   const JSONBIN_BIN_ID  = '6a0b072111c8435a0d44564e';   // z.B. '6642f3...'
   const JSONBIN_API_KEY = '$2a$10$JRQJFT3V1u/aIHsoSH3a6OheCSwqIWIhYFjNaUExI19rFVtzFBQ9q';    // z.B. '$2a$10$...'
-  const JSONBIN_URL     = `https://api.jsonbin.io/v3/b/${6a0b072111c8435a0d44564e}`;
+  const JSONBIN_URL     = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
 
   async function fetchLeaderboard() {
     const res = await fetch(JSONBIN_URL + '/latest', {
